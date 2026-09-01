@@ -23,7 +23,7 @@ Use only when the user explicitly invokes `$map`.
 11. `.discovery` persists across stops/resumes until successful finalization.
 12. Finalization compiles approved goals to Beads and stops. Never transition into implementation.
 
-While Map owns the workflow, invoke another skill only if the user explicitly requested it or this file explicitly permits it. `$caveman wenyan-full` is permitted only for compact `SUMMARY.md` or finalized Beads content.
+While Map owns the workflow, invoke another skill only if the user explicitly requested it or this file explicitly permits it. For compact `SUMMARY.md` or finalized Beads content, use maximally terse 文言文-style compressed prose, targeting roughly 80–90% character reduction. Prefer classical sentence patterns, verbs before objects, omitted subjects where clear, and particles such as 之/乃/為/其, while preserving all technical substance and exact technical terms.
 
 ## Agents
 
