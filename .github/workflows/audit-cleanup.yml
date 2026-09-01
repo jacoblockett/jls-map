@@ -28,11 +28,11 @@ jobs:
         run: |
           set -euo pipefail
           forbidden='jl-skills|\.jl-skills|skills/map|INSTALLER_SPEC|TODO\.md|RELEASES\.md|JL_MAP_CLI|AGENTS\.fragment'
-          if grep -RInE --exclude=README.md --exclude=audit-cleanup.yml --exclude-dir=.git "$forbidden" .; then
+          if grep -RInE --exclude=README.md --exclude=audit-cleanup.yml --exclude-dir=.git --exclude-dir=target "$forbidden" .; then
             echo 'Legacy JLS/monorepo references remain outside README.' >&2
             exit 1
           fi
-          if grep -RInE --exclude=README.md --exclude=Cargo.lock --exclude=audit-cleanup.yml --exclude-dir=.git '0\.2\.0|0\.5\.0|0\.7\.0' .; then
+          if grep -RInE --exclude=README.md --exclude=Cargo.lock --exclude=audit-cleanup.yml --exclude-dir=.git --exclude-dir=target '0\.2\.0|0\.5\.0|0\.7\.0' .; then
             echo 'Legacy project version references remain outside README/Cargo dependency versions.' >&2
             exit 1
           fi
