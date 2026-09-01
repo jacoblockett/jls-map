@@ -1,173 +1,180 @@
 ---
 name: map
-description: Define and persist a software project's intended end state by interrogating the user, maintaining durable goals, and compiling approved goals to Beads. Use only when explicitly invoked as $map.
+description: Define, clarify, and persist durable user intent in the local Map graph. Use when explicitly invoked as $map; ordinary agents may query Map without invoking this workflow.
 ---
 
 # Map
 
-Map defines product goals. It never implements the product.
-Use only when the user explicitly invokes `$map`.
+Map is the interactive editor for durable intent. It never implements the mapped work.
+Use this workflow when the user explicitly invokes `$map` or explicitly asks to start/resume Map clarification.
+
+The authoritative semantic state is the selected `.map` graph. Session state is recovery only.
+Never read or modify `.map/db` directly and never use SurrealQL instead of the CLI.
 
 ## Runtime invariants
 
-1. Preserve user intent; never invent requirements.
-2. Ask only decisions that materially affect the requested end state. Prefer safe inference and engineering freedom over interrogation.
-3. Product files contain durable product truth only. Process state belongs only in `PENDING.md`, `.discovery`, and `.tmp/`.
-4. Product files must pass the deletion test: deleting all Map/process state and history must not make their statements stale, process-relative, or unintelligible.
-5. Active goals are direct children of `goals/`: `goals/<name>.md`. Never create `goals/active/` or another active-goal subtree. Only deferred work may live under `goals/deferred/`.
-6. Five questions is a cap, never a quota.
-7. Children run serially. Consume and close each child before spawning another. Children never spawn children.
-8. Use subagents at semantic transaction boundaries, not for filesystem clerical work.
-9. Ordinary fresh flow with empty context whitelist should normally use 3 children before questions: Goal Writer, Discovery, Discovery Reviewer. Linguist is a fourth child only when needed.
-10. One semantic repair cycle maximum per reviewed transaction. No adversarial ping-pong.
-11. `.discovery` persists across stops/resumes until successful finalization.
-12. Finalization compiles approved goals to Beads and stops. Never transition into implementation.
+1. Preserve user intent. Never invent requirements, decisions, facts, or rationale.
+2. Ask only decisions that can materially affect the requested outcome at the effective depth/stance. Prefer safe inference and downstream freedom over interrogation.
+3. Five questions is a cap, never a quota.
+4. Facts are contextual evidence; decisions are choices. Do not ask the user for externally knowable facts when they can be established safely.
+5. Children run serially. Consume and close each child before spawning another. Children never spawn children.
+6. Use subagents at semantic transaction boundaries, not for CLI clerical work.
+7. Spawn prompts contain only dynamic arguments/evidence. The installed agent definition owns its semantic contract.
+8. One semantic repair cycle maximum per reviewed transaction. No reviewer/worker ping-pong.
+9. Persist recovery state before exposing resumable work. Clear pending only after its semantic consequence is durably verified.
+10. `explored` and `closed` are explicit. Never infer either from question count.
+11. Do not implement, plan implementation, create tasks, export to Beads/Jira/etc., or turn Map into a task tracker.
 
-While Map owns the workflow, invoke another skill only if the user explicitly requested it or this file explicitly permits it. For compact `SUMMARY.md` or finalized Beads content, use maximally terse 文言文-style compressed prose, targeting roughly 80–90% character reduction. Prefer classical sentence patterns, verbs before objects, omitted subjects where clear, and particles such as 之/乃/為/其, while preserving all technical substance and exact technical terms.
+While Map owns the workflow, invoke another skill only if the user explicitly requested it or this file explicitly permits it.
 
-## Agents
+## Required specialists
 
-Use these global custom agents as functions; their TOMLs own their semantic contracts:
+`jl-skills` installs seven Map specialists as native subagents for the selected harness:
 
-- `map_goal_writer`
-- `map_goal_reviewer`
-- `map_discovery`
-- `map_discovery_reviewer`
-- `map_linguist`
-- `map_context`
-- `map_completion_auditor`
-- `map_beads_writer`
-- `map_beads_reviewer`
+- `map-state-writer`
+- `map-state-reviewer`
+- `map-discovery`
+- `map-discovery-reviewer`
+- `map-linguist`
+- `map-context`
+- `map-completion-auditor`
 
-Spawn prompts contain only dynamic arguments/evidence. Do not restate or override an agent's role.
+For each specialist stage, spawn one fresh child using the exact registered specialist name. The installed subagent definition owns its semantic contract; the parent prompt supplies only the dynamic arguments/evidence required by that stage. Do not spawn a generic child and ask it to load a role file from this skill, and do not inline, paraphrase, or expand the specialist contract into the parent prompt. Close the child after consuming its result.
 
-## Workspace
+If a required named specialist cannot run, fail that stage closed. Do not replace its semantic judgment with the parent thread.
 
-Durable state:
+Normal fresh flow with no external context need should normally use three children before questions: State Writer, Discovery, Discovery Reviewer. Linguist is a fourth child only when needed.
+
+## CLI
+
+Use the installer-provisioned CLI:
 
 ```text
-goals/
-├── README.md
-├── SUMMARY.md
-├── .context_whitelist
-├── .discovery              # procedural memory while Map is active
-├── PENDING.md              # only while decisions await persistence
-├── <active-goal>.md        # active goals are root-level
-├── deferred/
-└── .tmp/
+{{JLS_MAP_CLI}}
 ```
 
-Authority:
+Global form:
 
-- active root-level goal files: authoritative current requirements
-- deferred files: authoritative postponed product intent, not current scope
-- README: human product overview/index
-- SUMMARY: compact settled product state for agents
-- PENDING: unanswered or answered-but-unpersisted user decisions
-- `.discovery`: durable Discovery/reviewer memory, never product authority
+```text
+{{JLS_MAP_CLI}} [--path PATH] [--config PATH] <command>
+```
 
-Do not duplicate PENDING or `.discovery` concerns into product files.
+Use `status`, `context`, `show`, `get`, `search`, `history`, and `validate` for reads. Use `--help` for exact command flags instead of memorizing unnecessary grammar.
 
-Use bundled `scripts/state.py` for deterministic state operations when applicable. Resolve it relative to this `SKILL.md`.
-If state is malformed or the script cannot safely operate, read `references/state-contract.md` and repair conservatively rather than guessing.
+Normal commands require an existing Map. Do not initialize one merely because the skill is installed.
 
 ## Start or resume
 
-1. Run `state.py bootstrap <GOALS_ROOT>`.
-2. Read README, SUMMARY, PENDING if present, `.discovery` if present, `.context_whitelist`, and active/deferred inventory as needed.
-3. Briefly tell the user your understanding of the current direction and ask for confirmation/correction before new semantic work. Do this on fresh and resumed invocations.
-4. If the user supplied answers to existing PENDING questions, record them as `answered_unpersisted` and persist those decisions before new Discovery.
-5. If `.discovery` says the current batch is exhausted and its Pending IDs still match unanswered PENDING entries, present/resume those questions instead of rediscovering.
+1. Resolve the intended Map and run `status` when one exists.
+2. If a recovery session exists, inspect session pending/exchange plus authoritative graph state before doing unrelated new Map work. Never blindly replay pending work.
+3. Briefly state your understanding of the requested outcome and effective `mvp|thorough` depth plus `normal|adversarial` stance. Ask for correction/confirmation before first authoritative mutation for a new direction.
+4. If no Map exists and the user confirms they are starting one here, run `init`. Do not initialize any other path by inference.
+5. Ensure a session exists for substantive Map conversation. Record exact user/assistant exchanges as required by the session-first persistence invariant.
 
-## Optional repository context
+If the user is only querying an existing Map rather than editing/clarifying it, answer from read-only Map state and do not start the full discovery workflow unnecessarily.
 
-If `.context_whitelist` has no active patterns, do not inspect implementation context.
-If it has patterns, spawn `map_context` once with PROJECT_ROOT, GOALS_ROOT, and confirmed direction. Reuse its compact report for the current semantic transaction. Never broaden beyond the whitelist.
+## Optional context transaction
 
-## Baseline goal transaction
+Use `map-context` only when repository/environment/external context materially affects the focused intent.
+Pass the exact authorized context scope and focus. Reuse its compact report for the current semantic transaction.
+Skip it when Map state and user evidence are sufficient.
 
-Before Discovery, settled concrete product intent must exist in at least one authoritative active goal.
-README/SUMMARY never substitute for a goal.
-Zero active goals is valid only when the direction is genuinely exploratory and no concrete product outcome can yet be written without invention.
+Context evidence may establish facts. It never silently becomes user intent.
 
-Run baseline when active goals are absent for concrete direction or confirmed direction materially invalidates current goal state:
+## Baseline semantic transaction
 
-1. Spawn `map_goal_writer` with `MODE: BASELINE`, GOALS_ROOT, TMP_DIR, confirmed direction/source evidence, and optional context report.
-2. Close it.
-3. Mechanically validate staged targets and commit only complete staged files.
-4. Run `state.py validate-baseline <GOALS_ROOT> --require-goal` when direction is concrete.
-5. If mechanical validation fails, discard stale `.tmp` candidates and retry Goal Writer once with the exact mechanical defect. If it fails again, stop and report the blocker.
+Before Discovery, confirmed concrete direction must exist as durable Map semantic state.
 
-Normal baseline does not use Goal Reviewer.
+For a new direction or a material direction correction:
+
+1. Persist the recovery checkpoint first.
+2. Spawn `map-state-writer` with `MODE: BASELINE` or `MODE: DIRECTION_CORRECTION`, Map path, confirmed source evidence, and optional context report.
+3. Close it.
+4. Run `validate` and inspect the affected intent/context.
+5. If mechanical validation fails, allow one State Writer repair with the exact defect. If it still fails, stop and report the blocker.
+
+Normal baseline does not use State Reviewer. Concrete confirmed direction must produce at least one durable intent unless doing so would require inventing the user's objective.
 
 ## Discovery batch
 
-If no current exhausted pending batch:
+For each focused non-closed intent needing exploration:
 
-1. Verify the baseline invariant above.
-2. Spawn `map_discovery` once with GOALS_ROOT and optional AUDIT_FOCUS. It reads compact settled/pending/discovery state and returns up to 5 candidates plus an exhaustion claim.
-3. If it reports `BASELINE_GOAL_MISSING`, repair baseline before continuing.
-4. Close Discovery.
-5. Spawn `map_discovery_reviewer` once with GOALS_ROOT, the whole candidate batch, exhaustion claim, and optional AUDIT_FOCUS.
-6. Close Reviewer.
-7. Apply reviewer-approved `.discovery` actions. Persist accepted/recovered questions to PENDING with stable IDs from `state.py qid`.
-8. If any approved questions need wording help, run `map_linguist` once for that subset.
-9. Present all approved questions together in a compact numbered list.
+1. Read its compact `context` and effective depth/stance.
+2. Spawn `map-discovery` once with Map path, focus intent IDs, optional context report, and optional audit focus.
+3. Close it.
+4. Spawn `map-discovery-reviewer` once with the whole candidate batch and exhaustion claim.
+5. Close it.
+6. Persist only reviewer-approved questions, using their exact approved semantic decision and reason. Do not create nodes for rejected/duplicate/already-settled candidates.
+7. If wording help is requested by Reviewer, run `map-linguist` once for that subset and use its returned wording exactly.
+8. Mark the focused intent `explored=true` after it has actually been examined.
+9. Before presenting questions, append the exact assistant message to session exchange and set session pending to the question IDs/text being exposed.
+10. Mark each presented question `asked=true`, then present the approved batch together.
 
-Discovery/review semantics live in their agent TOMLs. Globally enforce only these standards:
+Discovery standards:
+- material ambiguity only
+- no arbitrary quota
+- semantic duplicates do not become new questions
+- dependent questions wait for prerequisites
+- optional capabilities default out once direction is concrete
+- postponable implementation choices stay open
+- adversarial stance challenges assumptions rather than merely increasing question count
+- `EXHAUSTED` means no additional worthwhile decision belongs in the current pass; fewer than five is correct
 
-- unresolved ambiguity deserves user attention only when it can materially affect correctness, usability, relevant safety/privacy/performance, internal coherence, or objective verification
-- optional capabilities and safely postponable implementation choices default out of scope once direction is concrete
-- compare semantic decisions, not wording, against SUMMARY/goals, PENDING, `.discovery`, and the same batch
-- a compound candidate must not lose a necessary constituent merely because another constituent is unnecessary; Reviewer must preserve independently necessary decisions
-- `EXHAUSTED` means no additional worthwhile decision belongs in the current batch; pending questions need not be answered and fewer than 5 is correct
+If zero candidates are approved and Reviewer rejects exhaustion, allow one focused Discovery+Reviewer retry. If the same gap remains, surface that gap instead of looping.
 
-If Discovery returns zero candidates with exhaustion claimed and Reviewer rejects exhaustion, allow exactly one focused Discovery+Reviewer retry. If still unresolved, surface the audit focus instead of looping.
-
-## Answers and persistence
+## Answers and semantic persistence
 
 When the user answers:
 
-1. Associate answers with stable PENDING IDs and preserve materially relevant wording/clarifications.
-2. Mark answered entries `answered_unpersisted` before semantic persistence. Ask only the smallest direct clarification if an answer cannot be persisted without guessing.
-3. Build a Decision Packet containing approved question text, user answer, material clarification, current SUMMARY, and optional context report.
-4. Spawn `map_goal_writer` with `MODE: DECISIONS`; it stages affected goals/deferred files plus refreshed README/SUMMARY as one transaction.
-5. Close Writer. Spawn `map_goal_reviewer` once with the Decision Packet and staged envelope. Close Reviewer.
-6. On PASS, commit mechanically, remove persisted PENDING entries, reopen `.discovery` batch while retaining valid findings, and clean `.tmp`.
-7. On FAIL, discard stale candidates and allow one fresh Writer+Reviewer repair using the original Decision Packet plus exact deficiencies. If it fails again, stop and report defects.
-8. Return to Discovery with refreshed durable state.
+1. Append the exact user message to session exchange. Keep pending intact.
+2. Preserve the approved question text, materially relevant clarification, and user answer without strengthening or generalizing it.
+3. Spawn `map-state-writer` with `MODE: DECISIONS`, the exact evidence packet, Map path, and optional context report.
+4. Close Writer. Spawn `map-state-reviewer` once with the same evidence plus Writer's affected IDs/result.
+5. Close Reviewer.
+6. On PASS, run `validate`, verify affected context, update the session summary, and clear only pending work whose semantic consequence is durable.
+7. On FAIL, allow one fresh Writer+Reviewer repair using the original evidence plus exact deficiencies. If it fails again, stop and report the defects with pending intact.
+8. Return to Discovery using refreshed Map state.
 
-Use the same writer path with `MODE: DIRECTION_CORRECTION` when confirmed direction changes materially.
+User decisions use user provenance. Assistant decisions require explicit assistant reasoning and must be soft when deliberately revisit-worthy. Never hide assistant inference as a user decision.
 
 ## Completion
 
-When Discovery returns no approved questions, exhaustion passes, and PENDING is empty, spawn `map_completion_auditor` once.
+When reviewed Discovery is exhausted and no current unanswered material question remains for the focused intent, spawn `map-completion-auditor` once.
 
-- PASS: tell the user goals appear complete and ask explicit authorization to finalize.
-- FAIL: allow at most one focused Discovery batch using the auditor's unresolved areas as AUDIT_FOCUS. If the same blocker remains, surface it.
+- PASS: mechanically attempt `map set <intent> close true` for each auditor-approved focus intent. Runtime closure invariants remain authoritative.
+- FAIL: allow one focused Discovery batch using the auditor's unresolved material areas. If the same blocker remains, surface it.
 
-If the user adds/changes requirements instead of approving, persist them and continue Map.
-
-## Finalization
-
-Only after explicit user approval:
-
-1. Spawn `map_beads_writer`; close it.
-2. Spawn `map_beads_reviewer`; close it.
-3. On reviewer failure, allow one writer correction and one final review. Then stop on any remaining defect.
-4. On success, active goals remain authoritative; Beads map back to source goals; deferred work stays excluded.
-5. Run `state.py finalize-cleanup <GOALS_ROOT>` and stop.
-
-Do not implement product code.
+Closing an intent is not permanent. Later requirements may reopen affected state through normal Map semantics.
 
 ## Parent-owned mechanics
 
-The parent owns PENDING/.discovery bookkeeping and staging commits. Use `state.py` for bootstrap, stable question IDs, baseline/path validation, temp cleanup, and final cleanup. Do not spawn agents for filesystem clerical work.
+The parent owns CLI bookkeeping that does not require fresh semantic judgment:
 
-All semantic writers stage complete candidate files directly in `goals/.tmp/`; `.tmp/` never mirrors final directories. Delete stale candidates before retries and used candidates immediately after commit.
+- path/status resolution
+- session init/exchange/summary/pending/end bookkeeping
+- exact persistence of reviewer-approved questions
+- stable returned IDs and command-result tracking
+- `asked`, `explored`, and auditor-approved `close` operations when their semantic precondition was established by the workflow
+- validation and exact readback
+- retry counting
+- serial child lifecycle
+
+The parent must not replace Discovery, Reviewer, Linguist, State Writer/Reviewer, Context, or Completion Auditor semantic work with its own improvised substitute.
+
+## Recovery invariant
+
+For substantive Map conversation:
+
+```text
+A. Persist recovery state first.
+B. Apply and verify semantic mutations.
+C. Clear pending only after B is durable.
+```
+
+A crash between mutation and pending clear recovers by comparing pending/exchange against authoritative graph state, never by blind replay.
 
 ## Completion boundary
 
-Map is complete when a fresh capable implementation agent can read the finalized repository and `/goals` package, determine the complete required end state, and objectively judge whether each active goal is satisfied without the Map conversation.
+Map clarification for an intent is complete when its effective depth/stance has been genuinely explored, no material current question remains unresolved, runtime closure invariants hold, and `closed=true` succeeds.
 
 Sufficient definition is the target, not maximal specification.
