@@ -1,0 +1,269 @@
+name: Build
+
+on:
+  schedule:
+    - cron: '0 6,7 * * *'
+  workflow_dispatch:
+    inputs:
+      action:
+        description: What to run
+        required: true
+        default: build
+        type: choice
+        options:
+          - build
+          - nightly
+          - stable
+      force:
+        description: Force a nightly even when no build-relevant source changed
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: jls-map-build
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    outputs:
+      mode: ${{ steps.mode.outputs.mode }}
+      should_build: ${{ steps.mode.outputs.should_build }}
+      release_tag: ${{ steps.mode.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve mode
+        id: mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          mode=nightly
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then mode='${{ inputs.action }}'; fi
+          if [[ '${{ github.ref }}' != 'refs/heads/main' ]]; then
+            echo 'Build and release automation may only run from main.' >&2
+            exit 1
+          fi
+
+          should_build=true
+          release_tag=dev
+          if [[ "$mode" == nightly ]]; then
+            if [[ '${{ github.event_name }}' == 'schedule' ]]; then
+              local_hour="$(TZ=America/New_York date +%H)"
+              if [[ "$local_hour" != 02 ]]; then should_build=false; fi
+            fi
+            force='${{ github.event_name == 'workflow_dispatch' && inputs.force || false }}'
+            if [[ "$should_build" == true && "$force" != true ]]; then
+              git fetch origin --tags --force
+              if git rev-parse -q --verify refs/tags/nightly >/dev/null; then
+                mapfile -t files < <(git diff --name-only nightly..HEAD -- .github/workflows/build.yml Cargo.toml Cargo.lock manifest.json SKILL.md AGENTS.md schema.surql src tests harnesses scripts)
+                if (( ${#files[@]} == 0 )); then should_build=false; fi
+              fi
+            fi
+            release_tag=nightly
+          elif [[ "$mode" == stable ]]; then
+            version="$(python -c "import json; print(json.load(open('manifest.json', encoding='utf-8'))['version'])")"
+            release_tag="v$version"
+            git fetch origin --tags --force
+            if git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null; then
+              echo "Stable release $release_tag already exists. Bump the Map version before publishing another stable release." >&2
+              exit 1
+            fi
+          elif [[ "$mode" != build ]]; then
+            echo "Unknown build mode: $mode" >&2
+            exit 1
+          fi
+
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "should_build=$should_build" >> "$GITHUB_OUTPUT"
+          echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+
+      - name: No release build
+        if: steps.mode.outputs.should_build != 'true'
+        run: echo 'Nothing to build or publish.'
+
+  build:
+    needs: prepare
+    if: needs.prepare.outputs.should_build == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: windows-x64
+            runner: windows-2025
+            rust_target: x86_64-pc-windows-msvc
+            executable: map.exe
+            musl: false
+          - target: windows-arm64
+            runner: windows-11-vs2026-arm
+            rust_target: aarch64-pc-windows-msvc
+            executable: map.exe
+            musl: false
+          - target: macos-x64
+            runner: macos-15-intel
+            rust_target: x86_64-apple-darwin
+            executable: map
+            musl: false
+          - target: macos-arm64
+            runner: macos-15
+            rust_target: aarch64-apple-darwin
+            executable: map
+            musl: false
+          - target: linux-x64-gnu
+            runner: ubuntu-24.04
+            rust_target: x86_64-unknown-linux-gnu
+            executable: map
+            musl: false
+          - target: linux-arm64-gnu
+            runner: ubuntu-24.04-arm
+            rust_target: aarch64-unknown-linux-gnu
+            executable: map
+            musl: false
+          - target: linux-x64-musl
+            runner: ubuntu-24.04
+            rust_target: x86_64-unknown-linux-musl
+            executable: map
+            musl: true
+          - target: linux-arm64-musl
+            runner: ubuntu-24.04-arm
+            rust_target: aarch64-unknown-linux-musl
+            executable: map
+            musl: true
+    runs-on: "${{ matrix.runner }}"
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.89.0
+          targets: ${{ matrix.rust_target }}
+
+      - name: Configure musl toolchain
+        if: matrix.musl == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          if [[ '${{ matrix.target }}' == 'linux-x64-musl' ]]; then
+            echo 'CC_x86_64_unknown_linux_musl=musl-gcc' >> "$GITHUB_ENV"
+            echo 'CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc' >> "$GITHUB_ENV"
+          else
+            echo 'CC_aarch64_unknown_linux_musl=musl-gcc' >> "$GITHUB_ENV"
+            echo 'CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=musl-gcc' >> "$GITHUB_ENV"
+          fi
+
+      - name: Build Map runtime
+        shell: bash
+        run: cargo build --locked --release --target '${{ matrix.rust_target }}'
+
+      - name: Launch Map runtime
+        shell: bash
+        run: './target/${{ matrix.rust_target }}/release/${{ matrix.executable }}' --help >/dev/null
+
+      - name: Run Map regressions
+        if: matrix.target == 'linux-x64-gnu'
+        shell: bash
+        run: cargo test --locked
+
+      - name: Package target
+        shell: bash
+        run: |
+          python scripts/package_release.py \
+            --target '${{ matrix.target }}' \
+            --runtime 'target/${{ matrix.rust_target }}/release/${{ matrix.executable }}' \
+            --release-tag '${{ needs.prepare.outputs.release_tag }}' \
+            --output build
+
+      - name: Upload target artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: target-${{ matrix.target }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            build/map-${{ matrix.target }}.zip
+            build/fragment-${{ matrix.target }}.json
+
+  aggregate:
+    needs: [prepare, build]
+    if: needs.prepare.outputs.should_build == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Download all target artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: target-*
+          path: build/targets
+          merge-multiple: false
+
+      - name: Aggregate and verify complete Map release
+        shell: bash
+        run: |
+          python scripts/aggregate_release.py \
+            --input build/targets \
+            --output build/release \
+            --release-tag '${{ needs.prepare.outputs.release_tag }}'
+
+      - name: Upload verified release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-bundle
+          if-no-files-found: error
+          retention-days: 14
+          path: build/release/*
+
+  publish:
+    needs: [prepare, aggregate]
+    if: needs.prepare.outputs.should_build == 'true' && needs.prepare.outputs.mode != 'build'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-bundle
+          path: build/release
+
+      - name: Publish verified release bundle
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_MODE: ${{ needs.prepare.outputs.mode }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          mapfile -t assets < <(find build/release -maxdepth 1 -type f -print | sort)
+          if (( ${#assets[@]} != 9 )); then
+            echo "Expected 9 release assets, found ${#assets[@]}." >&2
+            exit 1
+          fi
+
+          if [[ "$RELEASE_MODE" == nightly ]]; then
+            if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+              gh release upload "$RELEASE_TAG" "${assets[@]}" --repo "$GH_REPO" --clobber
+              mapfile -t existing < <(gh release view "$RELEASE_TAG" --repo "$GH_REPO" --json assets --jq '.assets[].name')
+              for name in "${existing[@]}"; do
+                if [[ ! -f "build/release/$name" ]]; then gh release delete-asset "$RELEASE_TAG" "$name" --repo "$GH_REPO" -y; fi
+              done
+            else
+              gh release create "$RELEASE_TAG" "${assets[@]}" --repo "$GH_REPO" --title 'Nightly' --notes 'Rolling production-test build from main.' --prerelease --target "$GITHUB_SHA"
+            fi
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git tag -f nightly "$GITHUB_SHA"
+            git push origin refs/tags/nightly --force
+          else
+            gh release create "$RELEASE_TAG" "${assets[@]}" --repo "$GH_REPO" --title "$RELEASE_TAG" --generate-notes --target "$GITHUB_SHA"
+          fi
