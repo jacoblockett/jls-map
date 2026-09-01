@@ -1,0 +1,16 @@
+name: Lint workflows
+
+on:
+  push:
+    paths:
+      - .github/workflows/lint-workflows.yml
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install actionlint
+        run: go install github.com/rhysd/actionlint/cmd/actionlint@latest
+      - name: Lint workflows
+        run: "$(go env GOPATH)/bin/actionlint" .github/workflows/build.yml .github/workflows/validate-release.yml
