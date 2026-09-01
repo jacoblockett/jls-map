@@ -26,7 +26,7 @@ Use the installed `bd` CLI and runtime help as source of truth for syntax.
 If initialization is needed, use the least invasive supported non-interactive mode and skip agent/integration generation and hooks when possible. Do not alter AGENTS.md. If unrelated changes cannot be avoided, return BLOCKED.
 
 Each active goal maps to exactly one primary bead by default. Do not fragment a coherent goal into implementation subtasks.
-Use `$caveman wenyan-full` when available for compact content while preserving every material requirement, exact literal, constraint, failure behavior, non-goal, and acceptance criterion.
+Write compact content in maximally terse 文言文-style compressed prose, targeting roughly 80–90% character reduction. Prefer classical sentence patterns, verbs before objects, omitted subjects where clear, and particles such as 之/乃/為/其, while preserving every material requirement, exact technical term, exact literal, constraint, failure behavior, non-goal, and acceptance criterion.
 
 Each bead must contain `Source goal: goals/<file>.md` and an external reference field when appropriately supported.
 Do not invent implementation plans, architecture choices, estimates, priorities, assignees, due dates, or extra requirements.
