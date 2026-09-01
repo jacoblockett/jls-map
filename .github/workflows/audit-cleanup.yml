@@ -15,6 +15,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Clean migrated references
+        shell: bash
+        run: |
+          set -euo pipefail
+          find harnesses -type f -print0 | xargs -0 sed -i 's/jl-skills/JLS/g; s/{{JL_MAP_CLI}}/{{JLS_MAP_CLI}}/g'
+          sed -i 's/\.jl-skills/\.jls/g' tests/scoped_runtime.rs tests/runtime.rs
       - name: Refresh Cargo lockfile
         run: cargo check
       - name: Verify cleanup
@@ -37,13 +43,13 @@ jobs:
           grep -A2 -n '^name = "map-runtime"$' Cargo.lock
       - name: Test runtime
         run: cargo test --locked
-      - name: Commit lockfile refresh
+      - name: Commit cleanup
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add Cargo.lock
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Refresh Map lockfile metadata'
+          git add Cargo.lock harnesses tests
+          git diff --cached --quiet && exit 0
+          git commit -m 'Clean migrated Map references'
           git push
