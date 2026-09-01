@@ -25,7 +25,7 @@ fn installed_runtime_resolves_schema_from_its_scope_local_tooling_root() {
     let root = scratch();
     let _ = fs::remove_dir_all(&root);
 
-    let tooling = root.join(".jl-skills").join("map");
+    let tooling = root.join(".jls").join("map");
     let bin_dir = tooling.join("bin");
     let project = root.join("project");
     fs::create_dir_all(&bin_dir).expect("create scoped runtime bin");
@@ -53,5 +53,5 @@ fn installed_runtime_resolves_schema_from_its_scope_local_tooling_root() {
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(project.join(".map").join("project.json").is_file());
-    assert!(!home.join(".jl-skills").join("map").exists());
+    assert!(!home.join(".jls").join("map").exists());
 }

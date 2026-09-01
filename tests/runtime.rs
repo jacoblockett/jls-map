@@ -136,7 +136,7 @@ fn map_init_creates_local_project_identity_without_registry() {
     assert_eq!(project_id.len(), 20);
     assert!(project_id.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit()));
     assert!(identity["createdAtMs"].is_number());
-    assert!(!test_home().join(".jl-skills").join("map").join("registry.json").exists());
+    assert!(!test_home().join(".jls").join("map").join("registry.json").exists());
 }
 
 #[test]

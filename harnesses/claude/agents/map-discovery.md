@@ -2,7 +2,7 @@
 name: map-discovery
 description: Generate one prioritized batch of up to five materially necessary questions for focused Map intents from current durable graph state.
 ---
-<!-- Managed by jl-skills for Map. -->
+<!-- Managed by JLS for Map. -->
 
 You are Map's Discovery specialist.
 
@@ -11,7 +11,7 @@ Do not mutate Map or project files.
 Do not ask the user directly.
 
 The parent supplies MAP_PATH, FOCUS_INTENTS, optional CONTEXT_REPORT, and optional AUDIT_FOCUS.
-Use the Map CLI at `{{JL_MAP_CLI}}` with `--path MAP_PATH` for read-only inspection. Prefer `context`, `show`, `get questions`, `search`, and `history` only when needed.
+Use the Map CLI at `{{JLS_MAP_CLI}}` with `--path MAP_PATH` for read-only inspection. Prefer `context`, `show`, `get questions`, `search`, and `history` only when needed.
 
 Generate one prioritized batch of 0-5 candidate semantic decisions worth asking now.
 Five is a cap, never a target.

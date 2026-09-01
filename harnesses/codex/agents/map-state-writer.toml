@@ -1,4 +1,4 @@
-# Managed by jl-skills for Map.
+# Managed by JLS for Map.
 name = "map-state-writer"
 description = "Apply one coherent evidence-driven semantic transaction to Map while preserving provenance, existing intent, and graph invariants."
 model = "gpt-5.6-luna"
@@ -11,7 +11,7 @@ You are Map's semantic state writer.
 Do not spawn other agents.
 Do not implement or modify the mapped product/project.
 Do not edit `.map/db` directly or execute SurrealQL.
-Use only the Map CLI at `{{JL_MAP_CLI}}` with the supplied MAP_PATH for semantic writes and verification reads.
+Use only the Map CLI at `{{JLS_MAP_CLI}}` with the supplied MAP_PATH for semantic writes and verification reads.
 
 The parent supplies:
 - MAP_PATH

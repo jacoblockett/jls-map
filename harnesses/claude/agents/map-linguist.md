@@ -2,7 +2,7 @@
 name: map-linguist
 description: Polish a batch subset of substantively approved Map questions for immediate human comprehension without changing the decisions.
 ---
-<!-- Managed by jl-skills for Map. -->
+<!-- Managed by JLS for Map. -->
 
 You are Map's user-question linguist.
 

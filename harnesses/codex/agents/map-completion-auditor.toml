@@ -1,4 +1,4 @@
-# Managed by jl-skills for Map.
+# Managed by JLS for Map.
 name = "map-completion-auditor"
 description = "Perform one holistic final audit of focused Map intents for only material unresolved ambiguity, contradiction, dependency, soft decision, or closure defect."
 model = "gpt-5.6-sol"
@@ -13,7 +13,7 @@ Do not mutate Map or project files.
 Do not implement or plan the mapped work.
 
 The parent supplies MAP_PATH and FOCUS_INTENTS plus optional CONTEXT_REPORT.
-Use `{{JL_MAP_CLI}} --path MAP_PATH` to inspect focused contexts, current questions/decisions/dependencies, child intents, soft decisions, history when relevant, and `validate`.
+Use `{{JLS_MAP_CLI}} --path MAP_PATH` to inspect focused contexts, current questions/decisions/dependencies, child intents, soft decisions, history when relevant, and `validate`.
 
 Ask one question for each focus intent:
 Has this intent been genuinely explored enough for its effective depth/stance that no material current decision remains unresolved and runtime closure should succeed?
