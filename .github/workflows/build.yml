@@ -62,7 +62,7 @@ jobs:
             if [[ "$should_build" == true && "$force" != true ]]; then
               git fetch origin --tags --force
               if git rev-parse -q --verify refs/tags/nightly >/dev/null; then
-                mapfile -t files < <(git diff --name-only nightly..HEAD -- .github/workflows/build.yml Cargo.toml Cargo.lock manifest.json SKILL.md AGENTS.md schema.surql src tests harnesses scripts)
+                mapfile -t files < <(git diff --name-only nightly..HEAD -- .github/workflows/build.yml Cargo.toml Cargo.lock manifest.json SKILL.md AGENTS.md schema.surql src tests harnesses)
                 if (( ${#files[@]} == 0 )); then should_build=false; fi
               fi
             fi
@@ -138,10 +138,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.89.0
-          targets: ${{ matrix.rust_target }}
+      - name: Configure Rust toolchain
+        shell: bash
+        run: |
+          rustup toolchain install 1.89.0 --profile minimal
+          rustup target add --toolchain 1.89.0 '${{ matrix.rust_target }}'
 
       - name: Configure musl toolchain
         if: matrix.musl == true
@@ -161,7 +162,7 @@ jobs:
       - name: Build Map runtime
         shell: bash
         run: |
-          cargo build --locked --release --target "${{ matrix.rust_target }}"
+          cargo +1.89.0 build --locked --release --target "${{ matrix.rust_target }}"
 
       - name: Launch Map runtime
         shell: bash
@@ -172,26 +173,15 @@ jobs:
         if: matrix.target == 'linux-x64-gnu'
         shell: bash
         run: |
-          cargo test --locked
+          cargo +1.89.0 test --locked
 
-      - name: Package target
-        shell: bash
-        run: |
-          python scripts/package_release.py \
-            --target '${{ matrix.target }}' \
-            --runtime 'target/${{ matrix.rust_target }}/release/${{ matrix.executable }}' \
-            --release-tag '${{ needs.prepare.outputs.release_tag }}' \
-            --output build
-
-      - name: Upload target artifacts
+      - name: Upload target runtime
         uses: actions/upload-artifact@v4
         with:
           name: target-${{ matrix.target }}
           if-no-files-found: error
           retention-days: 14
-          path: |
-            build/map-${{ matrix.target }}.zip
-            build/fragment-${{ matrix.target }}.json
+          path: target/${{ matrix.rust_target }}/release/${{ matrix.executable }}
 
   aggregate:
     needs: [prepare, build]
@@ -200,20 +190,96 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download all target artifacts
+      - name: Download all target runtimes
         uses: actions/download-artifact@v4
         with:
           pattern: target-*
           path: build/targets
           merge-multiple: false
 
-      - name: Aggregate and verify complete Map release
+      - name: Package and verify complete Map release
         shell: bash
+        env:
+          RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
         run: |
-          python scripts/aggregate_release.py \
-            --input build/targets \
-            --output build/release \
-            --release-tag '${{ needs.prepare.outputs.release_tag }}'
+          set -euo pipefail
+
+          targets=(
+            windows-x64
+            windows-arm64
+            macos-x64
+            macos-arm64
+            linux-x64-gnu
+            linux-arm64-gnu
+            linux-x64-musl
+            linux-arm64-musl
+          )
+          executables=(
+            map.exe
+            map.exe
+            map
+            map
+            map
+            map
+            map
+            map
+          )
+
+          version="$(jq -er '.version' manifest.json)"
+          min_installer="$(jq -er '.min_installer' manifest.json)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$min_installer" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          [[ "$(jq -r '.name' manifest.json)" == map ]]
+          [[ "$(jq -r '.format' manifest.json)" == 1 ]]
+
+          rm -rf build/release
+          mkdir -p build/release
+          jq -n \
+            --arg version "$version" \
+            --arg min_installer "$min_installer" \
+            '{format: 1, name: "map", version: $version, min_installer: $min_installer, artifacts: {}}' \
+            > build/release/manifest.json
+
+          for i in "${!targets[@]}"; do
+            target="${targets[$i]}"
+            executable="${executables[$i]}"
+            runtime_path="$(jq -er --arg target "$target" '.runtime_artifacts[$target]' manifest.json)"
+            source="build/targets/target-$target/$executable"
+            archive="$PWD/build/release/map-$target.zip"
+            stage="$PWD/build/.package-$target"
+
+            test -f "$source"
+            rm -rf "$stage"
+            mkdir -p "$stage/$(dirname "$runtime_path")"
+            cp SKILL.md AGENTS.md schema.surql LICENSE "$stage/"
+            cp -R harnesses "$stage/harnesses"
+            cp "$source" "$stage/$runtime_path"
+            if [[ "$target" != windows-* ]]; then chmod +x "$stage/$runtime_path"; fi
+
+            jq --arg target "$target" --arg runtime_path "$runtime_path" \
+              '.runtime_artifacts = {($target): $runtime_path}' \
+              manifest.json > "$stage/manifest.json"
+
+            (
+              cd "$stage"
+              zip -q -r "$archive" .
+            )
+            rm -rf "$stage"
+
+            sha256="$(sha256sum "$archive" | cut -d' ' -f1)"
+            url="https://github.com/jacoblockett/jls-map/releases/download/$RELEASE_TAG/map-$target.zip"
+            tmp="$(mktemp)"
+            jq \
+              --arg target "$target" \
+              --arg url "$url" \
+              --arg sha256 "$sha256" \
+              '.artifacts[$target] = {url: $url, sha256: $sha256}' \
+              build/release/manifest.json > "$tmp"
+            mv "$tmp" build/release/manifest.json
+          done
+
+          test "$(find build/release -maxdepth 1 -type f | wc -l)" -eq 9
+          test "$(jq '.artifacts | length' build/release/manifest.json)" -eq 8
 
       - name: Upload verified release bundle
         uses: actions/upload-artifact@v4
