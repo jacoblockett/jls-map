@@ -114,8 +114,7 @@ Stage a complete compact SUMMARY candidate containing exactly these conceptual s
 - Relevant implementation context
 - Deferred
 
-Use dense compressed prose. Invoke `$caveman wenyan-full` when available as permitted by Map.
-Preserve exact literals, hard constraints, non-goals, failure behavior, and acceptance-critical distinctions.
+Use dense, maximally terse 文言文-style compressed prose, targeting roughly 80–90% character reduction. Prefer classical sentence patterns, verbs before objects, omitted subjects where clear, and particles such as 之/乃/為/其. Preserve all technical substance, exact technical terms, exact literals, hard constraints, non-goals, failure behavior, and acceptance-critical distinctions.
 
 Do not include pending questions, unresolved tracking, rejected candidates, inferred Discovery findings, batch state, or reviewer findings.
 
