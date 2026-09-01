@@ -8,7 +8,7 @@ Map runs locally through a Rust CLI backed by embedded SurrealKV. Project state 
 
 The recommended installation path is [JLS](https://github.com/jacoblockett/jls), which installs the correct Map package for the current platform and manages its agent integration, updates, and removal.
 
-Standalone packages are available from [Releases](https://github.com/jacoblockett/jls-map/releases). Nightly is a rolling prerelease build from `main`; normal releases are stable.
+Release packages are available from [Releases](https://github.com/jacoblockett/jls-map/releases). Nightly is a rolling prerelease from `main`; versioned releases are stable.
 
 Installing Map does not create project state. A `.map/` directory is created only when Map is explicitly initialized for a project.
 
