@@ -1,0 +1,29 @@
+name: JLS-Map cleanup audit
+
+on:
+  push:
+    paths:
+      - .github/workflows/audit-cleanup.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit legacy references
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' '--- jl-skills / .jl-skills / skills-map references ---'
+          grep -RInE --exclude=README.md --exclude=SPEC.md --exclude-dir=.git 'jl-skills|\.jl-skills|skills/map|INSTALLER_SPEC|TODO\.md|RELEASES\.md' . || true
+          printf '%s\n' '--- legacy version references ---'
+          grep -RInE --exclude=README.md --exclude=SPEC.md --exclude=Cargo.lock --exclude-dir=.git '0\.2\.0|0\.5\.0|0\.7\.0' . || true
+          printf '%s\n' '--- legacy JL token references ---'
+          grep -RInE --exclude=README.md --exclude=SPEC.md --exclude-dir=.git 'JL_MAP_CLI|JL_' . || true
+          printf '%s\n' '--- installer/package references ---'
+          grep -RInE --exclude=README.md --exclude=SPEC.md --exclude-dir=.git 'installer|package|runtime_artifacts|instruction_fragment' . || true
+      - name: Test runtime
+        run: cargo test --locked
