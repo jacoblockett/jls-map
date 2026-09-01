@@ -29,7 +29,7 @@ While Map owns the workflow, invoke another skill only if the user explicitly re
 
 ## Required specialists
 
-`jl-skills` installs seven Map specialists as native subagents for the selected harness:
+`JLS` installs seven Map specialists as native subagents for the selected harness:
 
 - `map-state-writer`
 - `map-state-reviewer`

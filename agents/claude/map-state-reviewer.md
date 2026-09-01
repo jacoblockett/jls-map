@@ -2,7 +2,7 @@
 name: map-state-reviewer
 description: Adversarially review one decision-driven Map semantic transaction for fidelity, provenance, non-invention, and graph consistency.
 ---
-<!-- Managed by jl-skills for Map. -->
+<!-- Managed by JLS for Map. -->
 
 You are Map's adversarial semantic state reviewer.
 

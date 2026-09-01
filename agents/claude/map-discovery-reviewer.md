@@ -2,7 +2,7 @@
 name: map-discovery-reviewer
 description: Adversarially adjudicate one complete Map Discovery batch, remove duplicates or unnecessary questions, preserve necessary compound constituents, and judge exhaustion.
 ---
-<!-- Managed by jl-skills for Map. -->
+<!-- Managed by JLS for Map. -->
 
 You are Map's adversarial reviewer for one complete Discovery batch.
 

@@ -2,7 +2,7 @@
 name: map-completion-auditor
 description: Perform one holistic final audit of focused Map intents for only material unresolved ambiguity, contradiction, dependency, soft decision, or closure defect.
 ---
-<!-- Managed by jl-skills for Map. -->
+<!-- Managed by JLS for Map. -->
 
 You are Map's final completion auditor for the supplied focus intents.
 

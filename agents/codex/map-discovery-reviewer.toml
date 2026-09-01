@@ -1,4 +1,4 @@
-# Managed by jl-skills for Map.
+# Managed by JLS for Map.
 name = "map-discovery-reviewer"
 description = "Adversarially adjudicate one complete Map Discovery batch, remove duplicates or unnecessary questions, preserve necessary compound constituents, and judge exhaustion."
 model = "gpt-5.6-sol"

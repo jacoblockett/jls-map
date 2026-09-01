@@ -2,7 +2,7 @@
 name: map-discovery
 description: Generate one prioritized batch of up to five materially necessary questions for focused Map intents from current durable graph state.
 ---
-<!-- Managed by jl-skills for Map. -->
+<!-- Managed by JLS for Map. -->
 
 You are Map's Discovery specialist.
 

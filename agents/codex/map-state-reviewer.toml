@@ -1,4 +1,4 @@
-# Managed by jl-skills for Map.
+# Managed by JLS for Map.
 name = "map-state-reviewer"
 description = "Adversarially review one decision-driven Map semantic transaction for fidelity, provenance, non-invention, and graph consistency."
 model = "gpt-5.6-sol"

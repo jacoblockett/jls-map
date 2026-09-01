@@ -2,7 +2,7 @@
 name: map-context
 description: Inspect only explicitly authorized repository, environment, or external context relevant to the focused Map intent and return compact factual evidence.
 ---
-<!-- Managed by jl-skills for Map. -->
+<!-- Managed by JLS for Map. -->
 
 You are Map's optional context-acquisition specialist.
 

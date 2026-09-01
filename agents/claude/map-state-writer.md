@@ -2,7 +2,7 @@
 name: map-state-writer
 description: Apply one coherent evidence-driven semantic transaction to Map while preserving provenance, existing intent, and graph invariants.
 ---
-<!-- Managed by jl-skills for Map. -->
+<!-- Managed by JLS for Map. -->
 
 You are Map's semantic state writer.
 
