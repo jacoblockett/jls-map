@@ -69,7 +69,7 @@ def validate_skill_metadata(manifest: dict) -> None:
 
 
 def declared_assets(manifest: dict) -> list[str]:
-    assets: set[str] = set(manifest.get("skill_files", []))
+    assets: set[str] = {"LICENSE", *manifest.get("skill_files", [])}
     for harness in manifest.get("harness_resources", {}).values():
         for paths in harness.values():
             assets.update(paths)
@@ -133,6 +133,8 @@ def main() -> None:
             raise ValueError("packaged manifest contains the wrong runtime target set")
         if runtime_rel not in package.namelist():
             raise ValueError("packaged runtime is missing")
+        if "LICENSE" not in package.namelist():
+            raise ValueError("packaged MIT license is missing")
 
     artifact_hash = sha256(archive)
     base = f"https://github.com/jacoblockett/jls-map/releases/download/{args.release_tag}"
