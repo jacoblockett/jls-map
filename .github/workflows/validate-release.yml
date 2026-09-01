@@ -74,14 +74,17 @@ jobs:
           fi
       - name: Build
         shell: bash
-        run: cargo build --locked --release --target '${{ matrix.rust_target }}'
+        run: |
+          cargo build --locked --release --target "${{ matrix.rust_target }}"
       - name: Launch
         shell: bash
-        run: './target/${{ matrix.rust_target }}/release/${{ matrix.executable }}' --help >/dev/null
+        run: |
+          "./target/${{ matrix.rust_target }}/release/${{ matrix.executable }}" --help >/dev/null
       - name: Test
         if: matrix.target == 'linux-x64-gnu'
         shell: bash
-        run: cargo test --locked
+        run: |
+          cargo test --locked
       - name: Package
         shell: bash
         run: |
@@ -108,5 +111,11 @@ jobs:
           pattern: validate-*
           path: build/targets
           merge-multiple: false
-      - run: python scripts/aggregate_release.py --input build/targets --output build/release --release-tag nightly
-      - run: test "$(find build/release -maxdepth 1 -type f | wc -l)" -eq 9
+      - name: Aggregate
+        shell: bash
+        run: |
+          python scripts/aggregate_release.py --input build/targets --output build/release --release-tag nightly
+      - name: Verify bundle size
+        shell: bash
+        run: |
+          test "$(find build/release -maxdepth 1 -type f | wc -l)" -eq 9
