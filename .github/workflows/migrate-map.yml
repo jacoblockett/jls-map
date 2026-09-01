@@ -1,0 +1,45 @@
+name: Migrate Map snapshot
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out JLS-Map
+        uses: actions/checkout@v4
+        with:
+          path: dest
+          fetch-depth: 0
+
+      - name: Check out authoritative Map source
+        uses: actions/checkout@v4
+        with:
+          repository: jacoblockett/JLS
+          ref: 416fa656925bc6e799c4eb64d81e09730e505991
+          path: source
+
+      - name: Copy exact Map subtree to repository root
+        shell: bash
+        run: |
+          set -euo pipefail
+          rsync -a --delete --exclude='.git' "$GITHUB_WORKSPACE/source/skills/map/" "$GITHUB_WORKSPACE/dest/"
+          diff -qr --exclude='.git' "$GITHUB_WORKSPACE/source/skills/map" "$GITHUB_WORKSPACE/dest"
+
+      - name: Commit migrated snapshot
+        working-directory: dest
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Migrate Map snapshot from JLS'
+          git push origin HEAD:main
