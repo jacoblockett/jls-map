@@ -59,7 +59,7 @@ jobs:
             if [[ "$should_build" == true && "$force" != true ]]; then
               git fetch origin --tags --force
               if git rev-parse -q --verify refs/tags/nightly >/dev/null; then
-                mapfile -t files < <(git diff --name-only nightly..HEAD -- .github/workflows/build.yml Cargo.toml Cargo.lock manifest.json SKILL.md AGENTS.md schema.surql src tests harnesses)
+                mapfile -t files < <(git diff --name-only nightly..HEAD -- .github/workflows/build.yml Cargo.toml Cargo.lock manifest.json SKILL.md AGENTS.md schema.surql src tests agents)
                 if (( ${#files[@]} == 0 )); then should_build=false; fi
               fi
             fi
@@ -249,7 +249,7 @@ jobs:
             rm -rf "$stage"
             mkdir -p "$stage/$(dirname "$runtime_path")"
             cp SKILL.md AGENTS.md schema.surql LICENSE "$stage/"
-            cp -R harnesses "$stage/harnesses"
+            cp -R agents "$stage/agents"
             cp "$source" "$stage/$runtime_path"
             if [[ "$target" != windows-* ]]; then chmod +x "$stage/$runtime_path"; fi
 
