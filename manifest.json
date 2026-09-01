@@ -1,8 +1,8 @@
 {
   "format": 1,
   "name": "map",
-  "version": "0.5.0",
-  "min_installer": "0.7.0",
+  "version": "1.0.0",
+  "min_installer": "1.0.0",
   "description": "Durable local graph of user intent, questions, decisions, ideas, facts, dependencies, and recovery state.",
   "skill_files": [
     "SKILL.md"
@@ -46,8 +46,8 @@
     "schema.surql"
   ],
   "runtime_cli": "map",
-  "cli_token": "JL_MAP_CLI",
-  "instruction_fragment": "AGENTS.fragment.md",
+  "cli_token": "JLS_MAP_CLI",
+  "instruction_fragment": "AGENTS.md",
   "generated_data": [
     {
       "path": ".map",
