@@ -2,7 +2,7 @@
 name: map
 description: Define, clarify, and persist durable user intent in the local Map graph. Use when explicitly invoked as $map; ordinary agents may query Map without invoking this workflow.
 ---
-<!-- jl-skills-meta: {"name":"map","version":"0.5.0","format":1} -->
+<!-- jls-meta: {"name":"map","version":"1.0.0","format":1} -->
 
 # Map
 
@@ -28,7 +28,7 @@ Never read or modify `.map/db` directly and never use SurrealQL instead of the C
 
 ## Required specialists
 
-`jl-skills` installs seven Map specialists as native subagents for the selected harness:
+JLS installs seven Map specialists as native subagents for the selected harness:
 
 - `map-state-writer`
 - `map-state-reviewer`
@@ -46,16 +46,16 @@ Normal fresh flow with no external context need should normally use three childr
 
 ## CLI
 
-Use the installer-provisioned CLI:
+Use the JLS-provisioned CLI:
 
 ```text
-{{JL_MAP_CLI}}
+{{JLS_MAP_CLI}}
 ```
 
 Global form:
 
 ```text
-{{JL_MAP_CLI}} [--path PATH] [--config PATH] <command>
+{{JLS_MAP_CLI}} [--path PATH] [--config PATH] <command>
 ```
 
 Use `status`, `context`, `show`, `get`, `search`, `history`, and `validate` for reads. Use `--help` for exact command flags instead of memorizing unnecessary grammar.
