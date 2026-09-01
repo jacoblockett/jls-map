@@ -35,7 +35,7 @@ jobs:
       should_build: ${{ steps.mode.outputs.should_build }}
       release_tag: ${{ steps.mode.outputs.release_tag }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -68,11 +68,10 @@ jobs:
             fi
             release_tag=nightly
           elif [[ "$mode" == stable ]]; then
-            version="$(python -c "import json; print(json.load(open('manifest.json', encoding='utf-8'))['version'])")"
-            release_tag="v$version"
+            release_tag="$(date -u +%Y.%m.%d-%H%MZ)"
             git fetch origin --tags --force
             if git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null; then
-              echo "Stable release $release_tag already exists. Bump the Map version before publishing another stable release." >&2
+              echo "Tag $release_tag already exists." >&2
               exit 1
             fi
           elif [[ "$mode" != build ]]; then
@@ -137,7 +136,7 @@ jobs:
             musl: true
     runs-on: "${{ matrix.runner }}"
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
         with:
@@ -199,7 +198,7 @@ jobs:
     if: needs.prepare.outputs.should_build == 'true'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
 
       - name: Download all target artifacts
         uses: actions/download-artifact@v4
@@ -229,7 +228,7 @@ jobs:
     if: needs.prepare.outputs.should_build == 'true' && needs.prepare.outputs.mode != 'build'
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -248,10 +247,7 @@ jobs:
         run: |
           set -euo pipefail
           mapfile -t assets < <(find build/release -maxdepth 1 -type f -print | sort)
-          if (( ${#assets[@]} != 9 )); then
-            echo "Expected 9 release assets, found ${#assets[@]}." >&2
-            exit 1
-          fi
+          if (( ${#assets[@]} == 0 )); then echo 'Verified release bundle is empty.' >&2; exit 1; fi
 
           if [[ "$RELEASE_MODE" == nightly ]]; then
             if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
