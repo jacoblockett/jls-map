@@ -15,6 +15,7 @@
         "agents/codex/map-discovery-reviewer.toml",
         "agents/codex/map-discovery.toml",
         "agents/codex/map-linguist.toml",
+        "agents/codex/map-source-extractor.toml",
         "agents/codex/map-state-reviewer.toml",
         "agents/codex/map-state-writer.toml"
       ]
@@ -26,6 +27,7 @@
         "agents/claude/map-discovery-reviewer.md",
         "agents/claude/map-discovery.md",
         "agents/claude/map-linguist.md",
+        "agents/claude/map-source-extractor.md",
         "agents/claude/map-state-reviewer.md",
         "agents/claude/map-state-writer.md"
       ]

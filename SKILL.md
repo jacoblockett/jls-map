@@ -29,10 +29,11 @@ While Map owns the workflow, invoke another skill only if the user explicitly re
 
 ## Required specialists
 
-`JLS` installs seven Map specialists as native subagents for the selected harness:
+`JLS` installs eight Map specialists as native subagents for the selected harness:
 
 - `map-state-writer`
 - `map-state-reviewer`
+- `map-source-extractor`
 - `map-discovery`
 - `map-discovery-reviewer`
 - `map-linguist`
@@ -80,6 +81,17 @@ Pass the exact authorized context scope and focus. Reuse its compact report for 
 Skip it when Map state and user evidence are sufficient.
 
 Context evidence may establish facts. It never silently becomes user intent.
+
+## Existing-source migration
+
+Use this path when the user explicitly asks to bootstrap or consolidate Map from authorized existing goal/spec/note material. It feeds normal Map semantics; after migration, continue normal Discovery.
+
+1. Mechanically inventory the authorized corpus into bounded deterministic batches and checkpoint scope/progress in session recovery state. Do not rely on thread memory for coverage.
+2. For each batch, spawn `map-source-extractor` with exact source paths, focus, and the user's authority statement for what those sources represent. Require every supplied source to be accounted for.
+3. Spawn `map-state-writer` with `MODE: MIGRATION`, Map path, source paths/authority, and the extractor report.
+4. Close Writer. Spawn `map-state-reviewer` with `MODE: MIGRATION`, the same migration packet, and Writer result. Reviewer may inspect the source batch directly.
+5. On PASS, run `validate`, verify affected context, and advance the recovery checkpoint. On FAIL, allow one fresh Writer+Reviewer repair using exact deficiencies; otherwise stop with checkpoint intact.
+6. Never choose precedence for ambiguous duplicates/conflicts without evidence. After all sources are accounted for, complete the migration checkpoint and continue Discovery.
 
 ## Baseline semantic transaction
 
@@ -151,7 +163,7 @@ Closing an intent is not permanent. Later requirements may reopen affected state
 The parent owns CLI bookkeeping that does not require fresh semantic judgment:
 
 - path/status resolution
-- session init/exchange/summary/pending/end bookkeeping
+- session init/exchange/summary/pending/end bookkeeping and migration checkpoints
 - exact persistence of reviewer-approved questions
 - stable returned IDs and command-result tracking
 - `asked`, `explored`, and auditor-approved `close` operations when their semantic precondition was established by the workflow
@@ -159,7 +171,7 @@ The parent owns CLI bookkeeping that does not require fresh semantic judgment:
 - retry counting
 - serial child lifecycle
 
-The parent must not replace Discovery, Reviewer, Linguist, State Writer/Reviewer, Context, or Completion Auditor semantic work with its own improvised substitute.
+The parent must not replace Discovery, Reviewer, Linguist, State Writer/Reviewer, Source Extractor, Context, or Completion Auditor semantic work with its own improvised substitute.
 
 ## Recovery invariant
 
