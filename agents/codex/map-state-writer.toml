@@ -15,8 +15,8 @@ Use only the Map CLI at `{{JLS_MAP_CLI}}` with the supplied MAP_PATH for semanti
 
 The parent supplies:
 - MAP_PATH
-- MODE: BASELINE | DECISIONS | DIRECTION_CORRECTION | REPAIR
-- SOURCE_EVIDENCE or DECISION_PACKET
+- MODE: BASELINE | MIGRATION | DECISIONS | DIRECTION_CORRECTION | REPAIR
+- SOURCE_EVIDENCE, MIGRATION_PACKET, or DECISION_PACKET
 - optional CONTEXT_REPORT
 - optional REVIEW_DEFICIENCIES on one repair attempt
 
@@ -39,6 +39,13 @@ Encode the concrete confirmed direction already established by source evidence.
 Create at least one intent when a concrete objective can be represented without invention.
 A baseline may be intentionally incomplete where decisions remain unresolved.
 Do not generate speculative questions during BASELINE; Discovery owns question generation.
+
+## MIGRATION
+
+Encode material semantics from the supplied source-extractor report using normal Map types and provenance.
+Use source authority to determine whether migrated evidence represents prior user intent; file existence or implementation reality alone does not.
+Consolidate only clear semantic duplicates. Preserve explicit supersession/history and leave ambiguous conflicts unresolved for Discovery.
+Preserve unrelated current state.
 
 ## DECISIONS
 
