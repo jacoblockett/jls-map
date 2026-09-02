@@ -1,6 +1,11 @@
 name: Build
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - manifest.json
   schedule:
     - cron: '0 23 * * *'
       timezone: 'America/New_York'
@@ -50,7 +55,11 @@ jobs:
         run: |
           set -euo pipefail
           mode=nightly
-          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then mode='${{ inputs.action }}'; fi
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
+            mode='${{ inputs.action }}'
+          elif [[ '${{ github.event_name }}' == 'push' ]]; then
+            mode=stable
+          fi
           if [[ '${{ github.ref }}' != 'refs/heads/main' ]]; then
             echo 'Build and release automation may only run from main.' >&2
             exit 1
@@ -67,6 +76,17 @@ jobs:
             exit 1
           fi
 
+          semver_gt() {
+            local lhs="$1"
+            local rhs="$2"
+            local l_major l_minor l_patch r_major r_minor r_patch
+            IFS=. read -r l_major l_minor l_patch <<< "$lhs"
+            IFS=. read -r r_major r_minor r_patch <<< "$rhs"
+            if (( 10#$l_major != 10#$r_major )); then (( 10#$l_major > 10#$r_major )); return; fi
+            if (( 10#$l_minor != 10#$r_minor )); then (( 10#$l_minor > 10#$r_minor )); return; fi
+            (( 10#$l_patch > 10#$r_patch ))
+          }
+
           should_build=true
           release_tag=dev
           if [[ "$mode" == nightly ]]; then
@@ -80,20 +100,43 @@ jobs:
             fi
             release_tag=nightly
           elif [[ "$mode" == stable ]]; then
-            requested_version='${{ inputs.version }}'
-            if [[ ! "$requested_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo 'Stable releases require an explicit plain-semver version input, for example 0.1.0.' >&2
-              exit 1
+            if [[ '${{ github.event_name }}' == 'push' ]]; then
+              before='${{ github.event.before }}'
+              if [[ "$before" =~ ^0+$ ]]; then
+                echo 'Automatic stable release cannot determine the previous commit version.' >&2
+                exit 1
+              fi
+              previous_version="$(git show "$before:manifest.json" | jq -er '.version')"
+              if [[ ! "$previous_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo "Previous Map manifest version must be plain semver: $previous_version" >&2
+                exit 1
+              fi
+              if [[ "$manifest_version" == "$previous_version" ]]; then
+                should_build=false
+              elif ! semver_gt "$manifest_version" "$previous_version"; then
+                echo "Map version must increase for an automatic stable release: $previous_version -> $manifest_version." >&2
+                exit 1
+              fi
+              requested_version="$manifest_version"
+            else
+              requested_version='${{ inputs.version }}'
+              if [[ ! "$requested_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                echo 'Stable releases require an explicit plain-semver version input, for example 0.1.0.' >&2
+                exit 1
+              fi
+              if [[ "$requested_version" != "$manifest_version" ]]; then
+                echo "Requested stable version $requested_version does not match manifest.json version $manifest_version." >&2
+                exit 1
+              fi
             fi
-            if [[ "$requested_version" != "$manifest_version" ]]; then
-              echo "Requested stable version $requested_version does not match manifest.json version $manifest_version." >&2
-              exit 1
-            fi
-            release_tag="v$requested_version"
-            git fetch origin --tags --force
-            if git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null; then
-              echo "Tag $release_tag already exists." >&2
-              exit 1
+
+            if [[ "$should_build" == true ]]; then
+              release_tag="v$requested_version"
+              git fetch origin --tags --force
+              if git rev-parse -q --verify "refs/tags/$release_tag" >/dev/null; then
+                echo "Tag $release_tag already exists." >&2
+                exit 1
+              fi
             fi
           elif [[ "$mode" != build ]]; then
             echo "Unknown build mode: $mode" >&2
@@ -351,5 +394,6 @@ jobs:
             git tag -f nightly "$GITHUB_SHA"
             git push origin refs/tags/nightly --force
           else
-            gh release create "$RELEASE_TAG" "${assets[@]}" --repo "$GH_REPO" --title "$RELEASE_TAG" --generate-notes --target "$GITHUB_SHA"
+            min_installer="$(jq -er '.min_installer' manifest.json)"
+            gh release create "$RELEASE_TAG" "${assets[@]}" --repo "$GH_REPO" --title "$RELEASE_TAG" --notes "Requires JLS installer $min_installer or newer." --generate-notes --target "$GITHUB_SHA"
           fi
