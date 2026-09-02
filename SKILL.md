@@ -66,10 +66,12 @@ Normal commands require an existing Map. Do not initialize one merely because th
 
 ## Start or resume
 
+If the user explicitly asks Map to implement, execute, or otherwise perform mapped work, stop before initialization or mutation. Briefly clarify Map's non-implementation role and offer to map/clarify the requested outcome instead; do not silently reinterpret the request as Map work.
+
 1. Resolve the intended Map and run `status` when one exists.
 2. If a recovery session exists, inspect session pending/exchange plus authoritative graph state before doing unrelated new Map work. Never blindly replay pending work.
-3. Briefly state your understanding of the requested outcome and effective `mvp|thorough` depth plus `normal|adversarial` stance. Ask for correction/confirmation before first authoritative mutation for a new direction.
-4. If no Map exists and the user confirms they are starting one here, run `init`. Do not initialize any other path by inference.
+3. Determine the requested outcome and effective `mvp|thorough` depth plus `normal|adversarial` stance. Do not restate clear direction merely for confirmation; ask only when a material interpretation is ambiguous.
+4. If no Map exists and the user invoked Map for substantive in-scope work, run `init` at the resolved intended path without separate confirmation. Do not initialize any other path by inference.
 5. Ensure a session exists for substantive Map conversation. Record exact user/assistant exchanges as required by the session-first persistence invariant.
 
 If the user is only querying an existing Map rather than editing/clarifying it, answer from read-only Map state and do not start the full discovery workflow unnecessarily.
