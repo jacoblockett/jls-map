@@ -13,12 +13,21 @@ Use `map --help`, `map <command> --help`, or `map --version` for exact syntax.
 
 Path precedence: `--path` → explicit config → cwd `.maprc` → cwd.
 
+Example:
+
+```text
+map --path /path/to/project status
+```
+
 ## Commands
 
 | Command | Purpose |
 | --- | --- |
 | `init [--schema PATH]` | Create a `.map`. |
-| `create intent|question|decision|idea|fact ...` | Create a node. |
+| `create intent <TEXT> [--context TEXT] [--depth ...] [--stance ...]` | Create an intent. |
+| `create question <TEXT> --intent <ID> [--reason TEXT]` | Create a question. |
+| `create decision <TEXT> [--question ID] [--source ...] [--assistant-reasoning TEXT] [--notes TEXT] [--soft]` | Create a decision. |
+| `create idea <TEXT>` / `create fact <TEXT> [--made-by ...]` | Create an idea or fact. |
 | `relate <SOURCE> <TARGET>... [--dependent]` | Add inferred relationships. |
 | `unrelate <SOURCE> <TARGET>... [--dependent]` | Remove inferred relationships. |
 | `set ...` | Set Map or node properties. |
@@ -34,12 +43,24 @@ Path precedence: `--path` → explicit config → cwd `.maprc` → cwd.
 | `history <ID> [--limit N]` | Show replacement history. |
 | `session init|summary|exchange|pending|end ...` | Manage recovery state. |
 
-## Output
+Common `set` forms:
+
+```text
+map set depth mvp|thorough
+map set stance normal|adversarial
+map set <ID> <PROPERTY> <VALUE>
+```
+
+Use subcommand help for supported node properties and `get` filters.
+
+## Notes
 
 Successful commands emit JSON to stdout. Errors use `map: <error>` on stderr and exit non-zero.
 
-`validate` reports graph validity in JSON via `ok` and `errors`.
+`validate` reports graph validity in JSON via `ok` and `errors`; inspect `ok` rather than treating validation errors as a normal command failure.
 
-Node IDs are opaque 20-character lowercase alphanumeric strings. Historical IDs generally resolve to their current replacement target.
+Several `get` flags are inclusion switches. For example, `--closed`, `--answered`, and `--abandoned` include those states in addition to the default result set rather than selecting only those states.
+
+Node IDs are opaque 20-character lowercase alphanumeric strings. Historical IDs generally resolve to their current replacement target; use `history` to inspect replacement chains.
 
 `.map/db` is runtime-managed; use the CLI rather than editing it directly.
