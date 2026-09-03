@@ -161,7 +161,7 @@ fn export_supports_formats_files_and_early_output_preflight() {
     let yaml = String::from_utf8(yaml.stdout).unwrap();
     assert!(yaml.starts_with("map:\n"));
     assert!(yaml.contains("nodes:\n"));
-    assert!(yaml.contains("relationships:\n"));
+    assert!(yaml.contains("relationships: []\n"));
 
     let bad_target = root.join("output-directory");
     fs::create_dir(&bad_target).unwrap();
