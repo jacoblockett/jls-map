@@ -8,6 +8,11 @@ async fn main() {
 
 async fn run() -> Result<()> {
     let cli = Cli::parse();
+    if let Command::Export(args) = &cli.command {
+        if let Some(path) = args.output.as_deref() {
+            preflight_export_output(path)?;
+        }
+    }
     match &cli.command {
         Command::Init { schema } => init_map(&cli, schema.clone()).await,
         _ => {
@@ -45,6 +50,7 @@ async fn dispatch(store: &Store, command: Command) -> Result<()> {
             include_history,
         } => search_command(store, &query, limit, include_history).await,
         Command::History { id, limit } => history_command(store, &id, limit).await,
+        Command::Export(args) => export_command(store, args).await,
         Command::Session { command } => session_command(store, command).await,
     }
 }
