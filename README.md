@@ -10,6 +10,10 @@ The recommended way to install Map is with [JLS](https://github.com/jacoblockett
 
 Standalone release packages are available from [Releases](https://github.com/jacoblockett/jls-map/releases).
 
+## Documentation
+
+- [CLI reference](docs/cli.md)
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE). Copyright © 2026 Jacob Lockett.
