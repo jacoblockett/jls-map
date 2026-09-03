@@ -96,6 +96,7 @@ enum Command {
         #[arg(long)]
         limit: Option<usize>,
     },
+    Export(ExportArgs),
     Session {
         #[command(subcommand)]
         command: SessionCommand,
