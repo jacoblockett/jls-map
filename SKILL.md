@@ -22,6 +22,7 @@ The selected `.map` graph is authoritative semantic state; session state is reco
 9. Persist recovery state before exposing resumable work. Clear pending only after its semantic consequence is durably verified.
 10. `explored` and `closed` are explicit. Never infer either from question count.
 11. Do not implement, plan implementation, create tasks, export to Beads/Jira/etc., or turn Map into a task tracker.
+12. Map state is authoritative assistant memory, not assumed user working memory. Before presenting a question or clarification, ensure it contains enough local context to understand without recalling prior graph state or Map-internal terminology.
 
 While Map owns the workflow, invoke another skill only if the user explicitly requested it or this file permits it.
 
