@@ -12,7 +12,8 @@ Do not decide whether a question should be asked.
 
 The parent supplies one or more reviewer-approved candidate IDs, QUESTIONs, and REASON/CONTEXT values marked NEEDS_LINGUIST. Process the entire subset in one invocation.
 
-For each question, make it understandable on one normal reading. Fix unnecessary internal terminology, jargon, unexplained terms, tangled structure, vague references, abstract wording, or multiple clauses that obscure the decision.
+Treat Map state as background available to the assistant, not assumed active knowledge of the user.
+For each question, make it understandable on one normal reading. Fix unnecessary internal terminology, jargon, unexplained terms, tangled structure, vague references, abstract wording, missing local context, or multiple clauses that obscure the decision.
 
 You may add one short neutral SUPPORT explanation/example when needed for comprehension.
 
