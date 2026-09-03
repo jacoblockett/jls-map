@@ -32,16 +32,16 @@ map --path /path/to/project status
 | `unrelate <SOURCE> <TARGET>... [--dependent]` | Remove inferred relationships. |
 | `set ...` | Set Map or node properties. |
 | `replace <OLD> <NEW> --reason <TEXT> [--in-place]` | Replace a node, preserving history. |
-| `abandon <ID> --by user|assistant --reason <TEXT>` | Abandon a node. |
+| `abandon <ID> --by <ACTOR> --reason <TEXT>` | Abandon a node. `ACTOR`: `user` or `assistant`. |
 | `delete <ID>... [--force]` | Delete nodes. |
-| `get intents|questions|decisions|ideas|facts ...` | List matching current IDs. |
+| `get <KIND> ...` | List matching current IDs. `KIND`: `intents`, `questions`, `decisions`, `ideas`, or `facts`. |
 | `show <ID>...` | Show node data. |
 | `context <ID>` | Show related graph context. |
 | `status` | Show Map/runtime status. |
 | `validate` | Validate graph invariants. |
 | `search <QUERY> [--limit N] [--include-history]` | Search nodes. |
 | `history <ID> [--limit N]` | Show replacement history. |
-| `session init|summary|exchange|pending|end ...` | Manage recovery state. |
+| `session <ACTION> ...` | Manage recovery state. `ACTION`: `init`, `summary`, `exchange`, `pending`, or `end`. |
 
 Common `set` forms:
 
