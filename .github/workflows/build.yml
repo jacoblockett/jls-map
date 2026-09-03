@@ -20,6 +20,21 @@ on:
           - build
           - nightly
           - stable
+      target:
+        description: Build target (used only when action is build)
+        required: true
+        default: linux-x64-gnu
+        type: choice
+        options:
+          - linux-x64-gnu
+          - windows-x64
+          - windows-arm64
+          - macos-x64
+          - macos-arm64
+          - linux-arm64-gnu
+          - linux-x64-musl
+          - linux-arm64-musl
+          - all
       version:
         description: Stable semantic version (for example 0.1.0)
         required: false
@@ -44,6 +59,7 @@ jobs:
       mode: ${{ steps.mode.outputs.mode }}
       should_build: ${{ steps.mode.outputs.should_build }}
       release_tag: ${{ steps.mode.outputs.release_tag }}
+      matrix: ${{ steps.mode.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -70,6 +86,18 @@ jobs:
             echo "Map manifest version must be plain semver: $manifest_version" >&2
             exit 1
           fi
+
+          all_matrix="$(jq -nc '{include:[
+            {target:"windows-x64",runner:"windows-2025",rust_target:"x86_64-pc-windows-msvc",executable:"map.exe",musl:false},
+            {target:"windows-arm64",runner:"windows-11-vs2026-arm",rust_target:"aarch64-pc-windows-msvc",executable:"map.exe",musl:false},
+            {target:"macos-x64",runner:"macos-15-intel",rust_target:"x86_64-apple-darwin",executable:"map",musl:false},
+            {target:"macos-arm64",runner:"macos-15",rust_target:"aarch64-apple-darwin",executable:"map",musl:false},
+            {target:"linux-x64-gnu",runner:"ubuntu-24.04",rust_target:"x86_64-unknown-linux-gnu",executable:"map",musl:false},
+            {target:"linux-arm64-gnu",runner:"ubuntu-24.04-arm",rust_target:"aarch64-unknown-linux-gnu",executable:"map",musl:false},
+            {target:"linux-x64-musl",runner:"ubuntu-24.04",rust_target:"x86_64-unknown-linux-musl",executable:"map",musl:true},
+            {target:"linux-arm64-musl",runner:"ubuntu-24.04-arm",rust_target:"aarch64-unknown-linux-musl",executable:"map",musl:true}
+          ]}')"
+          matrix="$all_matrix"
 
           semver_gt() {
             local lhs="$1"
@@ -133,7 +161,16 @@ jobs:
                 exit 1
               fi
             fi
-          elif [[ "$mode" != build ]]; then
+          elif [[ "$mode" == build ]]; then
+            requested_target='${{ inputs.target }}'
+            if [[ "$requested_target" != all ]]; then
+              matrix="$(jq -c --arg target "$requested_target" '{include: [.include[] | select(.target == $target)]}' <<< "$all_matrix")"
+              if [[ "$(jq '.include | length' <<< "$matrix")" -ne 1 ]]; then
+                echo "Unknown build target: $requested_target" >&2
+                exit 1
+              fi
+            fi
+          else
             echo "Unknown build mode: $mode" >&2
             exit 1
           fi
@@ -141,6 +178,7 @@ jobs:
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
           echo "should_build=$should_build" >> "$GITHUB_OUTPUT"
           echo "release_tag=$release_tag" >> "$GITHUB_OUTPUT"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
       - name: No release build
         if: steps.mode.outputs.should_build != 'true'
@@ -151,48 +189,7 @@ jobs:
     if: needs.prepare.outputs.should_build == 'true'
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - target: windows-x64
-            runner: windows-2025
-            rust_target: x86_64-pc-windows-msvc
-            executable: map.exe
-            musl: false
-          - target: windows-arm64
-            runner: windows-11-vs2026-arm
-            rust_target: aarch64-pc-windows-msvc
-            executable: map.exe
-            musl: false
-          - target: macos-x64
-            runner: macos-15-intel
-            rust_target: x86_64-apple-darwin
-            executable: map
-            musl: false
-          - target: macos-arm64
-            runner: macos-15
-            rust_target: aarch64-apple-darwin
-            executable: map
-            musl: false
-          - target: linux-x64-gnu
-            runner: ubuntu-24.04
-            rust_target: x86_64-unknown-linux-gnu
-            executable: map
-            musl: false
-          - target: linux-arm64-gnu
-            runner: ubuntu-24.04-arm
-            rust_target: aarch64-unknown-linux-gnu
-            executable: map
-            musl: false
-          - target: linux-x64-musl
-            runner: ubuntu-24.04
-            rust_target: x86_64-unknown-linux-musl
-            executable: map
-            musl: true
-          - target: linux-arm64-musl
-            runner: ubuntu-24.04-arm
-            rust_target: aarch64-unknown-linux-musl
-            executable: map
-            musl: true
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     runs-on: "${{ matrix.runner }}"
     steps:
       - uses: actions/checkout@v4
@@ -249,7 +246,7 @@ jobs:
 
   aggregate:
     needs: [prepare, build]
-    if: needs.prepare.outputs.should_build == 'true'
+    if: needs.prepare.outputs.should_build == 'true' && needs.prepare.outputs.mode != 'build'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
