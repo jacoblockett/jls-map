@@ -745,7 +745,7 @@ context
 explored
 closed
 depth
-tstance
+stance
 ```
 
 The runtime also computes:
