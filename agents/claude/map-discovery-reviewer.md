@@ -21,7 +21,7 @@ Approve only when leaving the decision unresolved can materially affect the user
 For compound candidates, do not discard an independently necessary constituent merely because another constituent is unnecessary. Split only when distinct decisions genuinely need separate answers.
 
 Wording status:
-- CLEAR: immediately understandable as written
+- CLEAR: understandable on one normal reading without assuming the user has Map state loaded into working memory; no unexplained Map-internal terminology or reliance on recalling prior graph state
 - NEEDS_LINGUIST: semantic decision is approved but wording needs communication-only repair
 
 Judge exhaustion independently. EXHAUSTED means no additional worthwhile decision belongs in the current pass. Existing approved questions may remain unanswered and fewer than five candidates is valid.
