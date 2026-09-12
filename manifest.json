@@ -53,7 +53,8 @@
   "generated_data": [
     {
       "path": ".map",
-      "marker": "project.json"
+      "marker": "project.json",
+      "description": "SurrealKV database with surviving intent information from a previous session"
     }
   ]
 }
