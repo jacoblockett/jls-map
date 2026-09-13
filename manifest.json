@@ -54,6 +54,7 @@
     {
       "path": ".map",
       "marker": "project.json",
+      "ownership_marker": ".jls-owned.json",
       "description": "SurrealKV database with surviving intent information from a previous session"
     }
   ]
