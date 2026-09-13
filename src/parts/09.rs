@@ -11,10 +11,32 @@ fn project_identity_path(map_dir: &Path) -> PathBuf {
 
 fn remove_legacy_ownership_marker(map_dir: &Path) -> Result<()> {
     let path = map_dir.join(".jls-owned.json");
-    if path.is_file() {
-        fs::remove_file(&path)
-            .with_context(|| format!("removing legacy Map ownership marker {}", path.display()))?;
+    if !path.is_file() {
+        return Ok(());
     }
+
+    // This is migration cleanup only. The filename is not an ownership signal:
+    // delete it only when it exactly matches the marker schema older JLS builds wrote.
+    let Ok(text) = fs::read_to_string(&path) else {
+        return Ok(());
+    };
+    let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return Ok(());
+    };
+    let Some(marker) = value.as_object() else {
+        return Ok(());
+    };
+    let owned = marker.len() == 4
+        && marker.get("format") == Some(&serde_json::json!(1))
+        && marker.get("owner") == Some(&serde_json::json!("jls"))
+        && marker.get("kind") == Some(&serde_json::json!("generated-data"))
+        && marker.get("skill") == Some(&serde_json::json!("map"));
+    if !owned {
+        return Ok(());
+    }
+
+    fs::remove_file(&path)
+        .with_context(|| format!("removing legacy Map ownership marker {}", path.display()))?;
     Ok(())
 }
 
