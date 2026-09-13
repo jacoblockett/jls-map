@@ -5,8 +5,20 @@ struct ProjectIdentity {
     created_at_ms: i64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct GeneratedDataOwnership {
+    format: u8,
+    owner: String,
+    kind: String,
+    skill: String,
+}
+
 fn project_identity_path(map_dir: &Path) -> PathBuf {
     map_dir.join("project.json")
+}
+
+fn generated_data_ownership_path(map_dir: &Path) -> PathBuf {
+    map_dir.join(".jls-owned.json")
 }
 
 fn valid_project_id(id: &str) -> bool {
@@ -58,6 +70,52 @@ fn write_project_identity(map_dir: &Path, identity: &ProjectIdentity) -> Result<
     Ok(())
 }
 
+fn ensure_generated_data_ownership(map_dir: &Path) -> Result<()> {
+    let path = generated_data_ownership_path(map_dir);
+    if path.exists() {
+        if !path.is_file() {
+            bail!("Map generated-data ownership marker {} is not a file", path.display());
+        }
+        let marker: GeneratedDataOwnership = serde_json::from_str(
+            &fs::read_to_string(&path)
+                .with_context(|| format!("reading Map generated-data ownership marker {}", path.display()))?,
+        )
+        .with_context(|| format!("parsing Map generated-data ownership marker {}", path.display()))?;
+        if marker.format != 1
+            || marker.owner != "jls"
+            || marker.kind != "generated-data"
+            || marker.skill != "map"
+        {
+            bail!("Map generated-data ownership marker is invalid");
+        }
+        return Ok(());
+    }
+
+    let marker = GeneratedDataOwnership {
+        format: 1,
+        owner: "jls".to_string(),
+        kind: "generated-data".to_string(),
+        skill: "map".to_string(),
+    };
+    let tmp = map_dir.join(format!(
+        ".jls-owned-{}-{}.tmp",
+        std::process::id(),
+        now_ms()
+    ));
+    fs::write(&tmp, format!("{}\n", serde_json::to_string_pretty(&marker)?))
+        .with_context(|| format!("writing Map generated-data ownership marker {}", tmp.display()))?;
+    if let Err(error) = fs::rename(&tmp, &path) {
+        let _ = fs::remove_file(&tmp);
+        return Err(error).with_context(|| {
+            format!(
+                "committing Map generated-data ownership marker {}",
+                path.display()
+            )
+        });
+    }
+    Ok(())
+}
+
 fn create_project_identity(map_dir: &Path) -> Result<ProjectIdentity> {
     let path = project_identity_path(map_dir);
     if path.exists() {
@@ -68,14 +126,17 @@ fn create_project_identity(map_dir: &Path) -> Result<ProjectIdentity> {
         created_at_ms: now_ms(),
     };
     write_project_identity(map_dir, &identity)?;
+    ensure_generated_data_ownership(map_dir)?;
     Ok(identity)
 }
 
 fn ensure_project_identity(map_dir: &Path) -> Result<ProjectIdentity> {
-    read_project_identity(map_dir)?.ok_or_else(|| {
+    let identity = read_project_identity(map_dir)?.ok_or_else(|| {
         anyhow!(
             "Map project identity {} is missing",
             project_identity_path(map_dir).display()
         )
-    })
+    })?;
+    ensure_generated_data_ownership(map_dir)?;
+    Ok(identity)
 }
