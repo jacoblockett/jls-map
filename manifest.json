@@ -3,7 +3,7 @@
   "name": "map",
   "version": "0.4.0",
   "min_installer": "0.1.0",
-  "description": "Durable local graph of user intent, questions, decisions, ideas, facts, dependencies, and recovery state.",
+  "description": "Durable intent graph for decisions and goals",
   "skill_files": [
     "SKILL.md"
   ],
