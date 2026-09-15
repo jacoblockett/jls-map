@@ -255,11 +255,10 @@ jobs:
 
           rm -rf build/release
           mkdir -p build/release
-          jq -n \
-            --arg version "$version" \
-            --arg min_installer "$min_installer" \
-            '{format: 1, name: "map", version: $version, min_installer: $min_installer, artifacts: {}}' \
-            > build/release/manifest.json
+          jq '
+            {format, name, version, min_installer, description, artifacts: {}}
+            + (if has("dependencies") then {dependencies} else {} end)
+          ' manifest.json > build/release/manifest.json
 
           for i in "${!targets[@]}"; do
             target="${targets[$i]}"
@@ -301,6 +300,10 @@ jobs:
 
           test "$(find build/release -maxdepth 1 -type f | wc -l)" -eq 9
           test "$(jq '.artifacts | length' build/release/manifest.json)" -eq 8
+          jq -e --slurp '
+            .[0].description == .[1].description
+            and (.[0].dependencies // null) == (.[1].dependencies // null)
+          ' build/release/manifest.json manifest.json >/dev/null
 
       - name: Upload verified release bundle
         uses: actions/upload-artifact@v4
