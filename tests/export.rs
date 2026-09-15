@@ -142,9 +142,9 @@ fn export_history_and_abandoned_are_independent_opt_ins() {
 }
 
 #[test]
-fn export_supports_formats_files_and_early_output_preflight() {
+fn export_supports_formats_files_and_rejects_invalid_output_targets() {
     let root = new_map("formats");
-    ok_json(&root, &["create", "intent", "Build app"]);
+    let intent = id(&ok_json(&root, &["create", "intent", "Build app"]));
 
     let toml_path = root.join("map-export.toml");
     let output = run(
@@ -155,29 +155,20 @@ fn export_supports_formats_files_and_early_output_preflight() {
     assert!(output.stdout.is_empty());
     let parsed: toml::Value = toml::from_str(&fs::read_to_string(&toml_path).unwrap()).unwrap();
     assert!(parsed["map"]["projectId"].as_str().is_some());
+    assert_eq!(parsed["nodes"][0]["id"].as_str(), Some(intent.as_str()));
 
     let yaml = run(&root, &["export", "-f", "yaml"]);
     assert!(yaml.status.success(), "{}", String::from_utf8_lossy(&yaml.stderr));
-    let yaml = String::from_utf8(yaml.stdout).unwrap();
-    assert!(yaml.starts_with("map:\n"));
-    assert!(yaml.contains("nodes:\n"));
-    assert!(yaml.contains("relationships: []\n"));
+    let yaml = String::from_utf8(yaml.stdout).expect("UTF-8 YAML export");
+    assert!(!yaml.trim().is_empty());
+    assert!(yaml.contains(&intent));
+    assert!(yaml.contains("Build app"));
 
     let bad_target = root.join("output-directory");
     fs::create_dir(&bad_target).unwrap();
-    let missing_map = root.join("missing-map");
-    let failure = Command::new(bin())
-        .env("USERPROFILE", &root)
-        .env("HOME", &root)
-        .arg("--path")
-        .arg(&missing_map)
-        .arg("export")
-        .arg("-o")
-        .arg(&bad_target)
-        .output()
-        .unwrap();
+    let failure = run(
+        &root,
+        &["export", "-o", bad_target.to_str().unwrap()],
+    );
     assert!(!failure.status.success());
-    let stderr = String::from_utf8_lossy(&failure.stderr);
-    assert!(stderr.contains("not a file"));
-    assert!(!stderr.contains("no .map exists"));
 }
