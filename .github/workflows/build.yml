@@ -196,6 +196,19 @@ jobs:
         run: |
           cargo +1.89.0 test --locked
 
+      - name: Validate release profile metadata
+        if: matrix.target == 'linux-x64-gnu'
+        shell: bash
+        run: |
+          jq '
+            {format, name, version, min_installer, description, artifacts: {}}
+            + (if has("dependencies") then {dependencies} else {} end)
+          ' manifest.json > /tmp/map-release-profile.json
+          jq -e --slurp '
+            .[0].description == .[1].description
+            and (.[0].dependencies // null) == (.[1].dependencies // null)
+          ' /tmp/map-release-profile.json manifest.json >/dev/null
+
       - name: Upload target runtime
         uses: actions/upload-artifact@v4
         with:
