@@ -17,7 +17,7 @@ The selected `.map` graph is authoritative semantic state; session state is reco
 4. Facts are contextual evidence; decisions are choices. Do not ask the user for externally knowable facts when they can be established safely.
 5. Children run serially. Consume and close each child before spawning another. Children never spawn children.
 6. Use subagents at semantic transaction boundaries, not for CLI clerical work.
-7. Spawn prompts contain only dynamic arguments/evidence; the installed agent definition owns its semantic contract.
+7. Spawn prompts contain only dynamic arguments/evidence; the specialist definition owns its semantic contract.
 8. One semantic repair cycle maximum per reviewed transaction. No reviewer/worker ping-pong.
 9. Persist recovery state before exposing resumable work. Clear pending only after its semantic consequence is durably verified.
 10. `explored` and `closed` are explicit. Never infer either from question count.
