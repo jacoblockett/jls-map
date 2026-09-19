@@ -1,4 +1,3 @@
-# Managed by JLS for Map.
 name = "map-context"
 description = "Inspect only explicitly authorized repository, environment, or external context relevant to the focused Map intent and return compact factual evidence."
 model = "gpt-5.6-luna"
