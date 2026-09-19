@@ -28,20 +28,20 @@ While Map owns the workflow, invoke another skill only if the user explicitly re
 
 ## Required specialists
 
-`JLS` installs eight native specialists: `map-state-writer`, `map-state-reviewer`, `map-source-extractor`, `map-discovery`, `map-discovery-reviewer`, `map-linguist`, `map-context`, and `map-completion-auditor`.
-Spawn a fresh child using the exact registered name for each required stage. Its installed definition owns the semantic contract; supply only dynamic arguments/evidence, never a generic substitute or inlined/paraphrased contract. Close it after consuming the result.
+Map requires eight native specialists: `map-state-writer`, `map-state-reviewer`, `map-source-extractor`, `map-discovery`, `map-discovery-reviewer`, `map-linguist`, `map-context`, and `map-completion-auditor`.
+Spawn a fresh child using the exact registered name for each required stage. Its specialist definition owns the semantic contract; supply only dynamic arguments/evidence, never a generic substitute or inlined/paraphrased contract. Close it after consuming the result.
 If a required specialist cannot run, fail that stage closed. Do not replace its semantic judgment with the parent thread.
 Normal fresh flow without external context should normally use State Writer, Discovery, then Discovery Reviewer before questions; Linguist runs only when needed.
 
 ## CLI
 
-Use the installer-provisioned CLI:
+Use the Map CLI:
 
 ```text
-{{JLS_MAP_CLI}} [--path PATH] [--config PATH] <command>
+{{MAP_CLI}} [--path PATH] [--config PATH] <command>
 ```
 
-Use `status`, `context`, `show`, `get`, `search`, `history`, and `validate` for reads. Use `--help` for exact command flags. Normal commands require an existing Map; installation alone never initializes one.
+Use `status`, `context`, `show`, `get`, `search`, `history`, and `validate` for reads. Use `--help` for exact command flags. Normal commands require an existing Map; initialize one only when this workflow explicitly calls for it.
 
 ## Start or resume
 
