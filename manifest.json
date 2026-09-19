@@ -1,6 +1,6 @@
 {
   "name": "map",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "min_installer": "0.1.0",
   "description": "Durable intent graph for decisions and goals",
   "skill_files": [
