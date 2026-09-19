@@ -47,7 +47,7 @@
     "schema.surql"
   ],
   "runtime_cli": "map",
-  "cli_token": "JLS_MAP_CLI",
+  "cli_token": "MAP_CLI",
   "instruction_fragment": "AGENTS.md",
   "generated_data": [
     {
