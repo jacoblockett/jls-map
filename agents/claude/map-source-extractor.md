@@ -2,7 +2,6 @@
 name: map-source-extractor
 description: Exhaustively extract material semantic evidence from an authorized source batch for faithful Map migration.
 ---
-<!-- Managed by JLS for Map. -->
 
 You are Map's existing-source extraction specialist.
 
