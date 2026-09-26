@@ -115,7 +115,8 @@ jobs:
 
       - name: Launch Map runtime
         shell: bash
-        run: "./target/${{ matrix.rust_target }}/release/${{ matrix.executable }}" --help >/dev/null
+        run: |
+          "./target/${{ matrix.rust_target }}/release/${{ matrix.executable }}" --help >/dev/null
 
       - name: Run Map regressions
         if: matrix.target == 'linux-x64-gnu'
